@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 async function startRazorpayCheckout(userEmail: string, userName: string, onSuccess: () => void) {
-  const res = await fetch("/api/razorpay/create-order", { method: "POST" });
+  const res = await fetch("/api/razorpay/create-subscription", { method: "POST" });
   if (!res.ok) {
     if (res.status === 401) {
       window.location.href = "/login";
@@ -18,22 +18,20 @@ async function startRazorpayCheckout(userEmail: string, userName: string, onSucc
     alert(`Payment error: ${body.error ?? "Unknown error (check Vercel logs)"}`);
     return;
   }
-  const { orderId, amount, currency } = await res.json();
+  const { subscriptionId } = await res.json();
 
   const rzp = new (window as any).Razorpay({
     key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-    amount,
-    currency,
+    subscription_id: subscriptionId,
     name: "ResumeAI",
-    description: "Pro — Unlimited tailoring",
-    order_id: orderId,
+    description: "Pro — ₹399/month, cancel anytime",
     prefill: { email: userEmail, name: userName },
     handler: async (response: any) => {
       const verify = await fetch("/api/razorpay/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          razorpay_order_id: response.razorpay_order_id,
+          razorpay_subscription_id: response.razorpay_subscription_id,
           razorpay_payment_id: response.razorpay_payment_id,
           razorpay_signature: response.razorpay_signature,
         }),
@@ -107,7 +105,7 @@ export function PricingSection() {
             <CardHeader>
               <h3 className="font-semibold text-lg">Pro</h3>
               <p className="text-2xl font-bold">
-                ₹199<span className="text-sm font-normal text-muted-foreground">/month</span>
+                ₹399<span className="text-sm font-normal text-muted-foreground">/month</span>
               </p>
               <p className="text-sm text-muted-foreground">Unlimited tailoring, no watermark</p>
             </CardHeader>

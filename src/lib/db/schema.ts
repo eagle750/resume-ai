@@ -28,6 +28,7 @@ export const users = pgTable("users", {
   // subscriptionStatus: 'inactive' | 'active' | 'cancelled' | 'past_due'
   paymentProvider: text("payment_provider"),
   // paymentProvider: 'razorpay' | 'lemonsqueezy'
+  proExpiresAt: timestamp("pro_expires_at", { mode: "date" }),
   tailorsUsedThisMonth: integer("tailors_used_this_month").default(0),
   tailorsResetDate: timestamp("tailors_reset_date", { mode: "date" }).defaultNow(),
   baseResumeText: text("base_resume_text"),

@@ -20,20 +20,43 @@ export async function POST(req: NextRequest) {
   }
 
   const payload = JSON.parse(rawBody);
-  const event = payload.event;
+  const event = payload.event as string;
+  const subscription = payload.payload?.subscription?.entity;
   const payment = payload.payload?.payment?.entity;
 
-  if (event === "payment.captured" && payment?.notes?.user_id) {
+  const userId =
+    subscription?.notes?.user_id ?? payment?.notes?.user_id;
+
+  if (!userId) return NextResponse.json({ received: true });
+
+  if (event === "subscription.activated" || event === "subscription.charged") {
+    // Extend pro access by 30 days from now
+    const proExpiresAt = new Date();
+    proExpiresAt.setDate(proExpiresAt.getDate() + 30);
+
     await db
       .update(users)
       .set({
         plan: "pro",
         subscriptionStatus: "active",
-        subscriptionId: payment.id,
+        subscriptionId: subscription?.id ?? payment?.subscription_id,
         paymentProvider: "razorpay",
+        proExpiresAt,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, payment.notes.user_id));
+      .where(eq(users.id, userId));
+  }
+
+  if (event === "subscription.cancelled" || event === "subscription.halted") {
+    await db
+      .update(users)
+      .set({
+        plan: "free",
+        subscriptionStatus: event === "subscription.cancelled" ? "cancelled" : "past_due",
+        proExpiresAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
   }
 
   return NextResponse.json({ received: true });
