@@ -47,7 +47,7 @@ export default function SettingsPage() {
           <p className="text-sm">
             <span className="text-muted-foreground">Plan:</span>{" "}
             <Badge variant={profile.plan === "free" ? "secondary" : "default"}>
-              {profile.plan === "pro_india" ? "Pro India" : profile.plan === "pro_global" ? "Pro Global" : "Free"}
+              {profile.plan === "pro" ? "Pro" : "Free"}
             </Badge>
           </p>
         </CardContent>
@@ -65,7 +65,7 @@ export default function SettingsPage() {
                 <Button>View plans</Button>
               </Link>
               <p className="text-sm text-muted-foreground w-full">
-                Pro India: ₹499/month · Pro Global: $9/month
+                Pro: ₹199/month
               </p>
             </div>
           ) : (

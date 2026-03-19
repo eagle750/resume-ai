@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     await db
       .update(users)
       .set({
-        plan: "pro_india",
+        plan: "pro",
         subscriptionStatus: "active",
         subscriptionId: razorpay_payment_id,
         paymentProvider: "razorpay",

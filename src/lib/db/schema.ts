@@ -22,7 +22,7 @@ export const users = pgTable("users", {
 
   // Our custom fields (added on top of NextAuth defaults)
   plan: text("plan").default("free").notNull(),
-  // plan can be: 'free' | 'pro_india' | 'pro_global'
+  // plan can be: 'free' | 'pro'
   subscriptionId: text("subscription_id"),
   subscriptionStatus: text("subscription_status").default("inactive"),
   // subscriptionStatus: 'inactive' | 'active' | 'cancelled' | 'past_due'

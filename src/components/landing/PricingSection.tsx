@@ -25,7 +25,7 @@ async function startRazorpayCheckout(userEmail: string, userName: string, onSucc
     amount,
     currency,
     name: "ResumeAI",
-    description: "Pro India — Unlimited tailoring",
+    description: "Pro — Unlimited tailoring",
     order_id: orderId,
     prefill: { email: userEmail, name: userName },
     handler: async (response: any) => {
@@ -102,14 +102,14 @@ export function PricingSection() {
             </CardContent>
           </Card>
 
-          {/* Pro India */}
+          {/* Pro */}
           <Card className="border-primary shadow-lg">
             <CardHeader>
-              <h3 className="font-semibold text-lg">Pro India</h3>
+              <h3 className="font-semibold text-lg">Pro</h3>
               <p className="text-2xl font-bold">
-                ₹499<span className="text-sm font-normal text-muted-foreground">/month</span>
+                ₹199<span className="text-sm font-normal text-muted-foreground">/month</span>
               </p>
-              <p className="text-sm text-muted-foreground">Unlimited tailoring for Indian job seekers</p>
+              <p className="text-sm text-muted-foreground">Unlimited tailoring, no watermark</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <ul className="space-y-2">
@@ -120,29 +120,6 @@ export function PricingSection() {
                 ))}
               </ul>
               <Button className="w-full" onClick={handleProIndia}>Subscribe</Button>
-            </CardContent>
-          </Card>
-
-          {/* Pro Global */}
-          <Card>
-            <CardHeader>
-              <h3 className="font-semibold text-lg">Pro Global</h3>
-              <p className="text-2xl font-bold">
-                $9<span className="text-sm font-normal text-muted-foreground">/month</span>
-              </p>
-              <p className="text-sm text-muted-foreground">Same as Pro, billed in USD</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ul className="space-y-2">
-                {["Unlimited tailored resumes", "All templates", "No watermark", "Global billing"].map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-primary shrink-0" />{f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/dashboard/settings" className="block w-full">
-                <Button className="w-full" variant="outline">Subscribe</Button>
-              </Link>
             </CardContent>
           </Card>
         </div>

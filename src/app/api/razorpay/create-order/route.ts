@@ -11,10 +11,10 @@ export async function POST(req: NextRequest) {
   try {
     const razorpay = getRazorpayInstance();
     const order = await razorpay.orders.create({
-      amount: 49900, // ₹499 in paise
+      amount: 19900, // ₹199 in paise
       currency: "INR",
       receipt: `r_${session.user.id.slice(0, 8)}_${Date.now().toString().slice(-8)}`,
-      notes: { user_id: session.user.id, plan: "pro_india" },
+      notes: { user_id: session.user.id, plan: "pro" },
     });
 
     return NextResponse.json({
