@@ -8,24 +8,14 @@ export const PLANS = {
     tailorsPerMonth: 3,
     templates: 1,
     watermark: true,
-    priceIndia: null,
-    priceGlobal: null,
+    price: null,
   },
-  pro_india: {
-    name: "Pro India",
+  pro: {
+    name: "Pro",
     tailorsPerMonth: Infinity,
     templates: -1, // all
     watermark: false,
-    priceIndia: 499,
-    priceGlobal: null,
-  },
-  pro_global: {
-    name: "Pro Global",
-    tailorsPerMonth: Infinity,
-    templates: -1,
-    watermark: false,
-    priceIndia: null,
-    priceGlobal: 9,
+    price: 199,
   },
 } as const;
 

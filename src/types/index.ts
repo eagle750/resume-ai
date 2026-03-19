@@ -35,7 +35,7 @@ export interface TailorResult {
   };
 }
 
-export type Plan = "free" | "pro_india" | "pro_global";
+export type Plan = "free" | "pro";
 export type SubscriptionStatus = "inactive" | "active" | "cancelled" | "past_due";
 
 export interface Profile {
@@ -46,7 +46,7 @@ export interface Profile {
   plan: Plan;
   subscriptionId: string | null;
   subscriptionStatus: SubscriptionStatus;
-  paymentProvider: "razorpay" | "lemonsqueezy" | null;
+  paymentProvider: "razorpay" | null;
   tailorsUsedThisMonth: number;
   tailorsResetDate: Date | null;
   baseResumeText: string | null;
