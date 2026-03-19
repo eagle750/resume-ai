@@ -1,43 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { users, tailoredResumes } from "@/lib/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { tailorResume } from "@/lib/claude";
-import { FREE_TAILORS_PER_MONTH } from "@/lib/constants";
+
+const FREE_LIMIT = 3;
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
+    // Check auth
+    const session = await auth();
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Please log in" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+    const userId = session.user.id;
 
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    // Get user profile
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const daysSinceReset =
-      (Date.now() - new Date(profile.tailors_reset_date).getTime()) / 86400000;
+    // Reset monthly counter if 30+ days passed
+    const daysSinceReset = user.tailorsResetDate
+      ? (Date.now() - user.tailorsResetDate.getTime()) / 86400000
+      : 31;
+
     if (daysSinceReset >= 30) {
-      await supabase
-        .from("profiles")
-        .update({
-          tailors_used_this_month: 0,
-          tailors_reset_date: new Date().toISOString(),
+      await db
+        .update(users)
+        .set({
+          tailorsUsedThisMonth: 0,
+          tailorsResetDate: new Date(),
         })
-        .eq("id", user.id);
-      profile.tailors_used_this_month = 0;
+        .where(eq(users.id, userId));
+      user.tailorsUsedThisMonth = 0;
     }
 
+    // Check limits for free users
     if (
-      profile.plan === "free" &&
-      profile.tailors_used_this_month >= FREE_TAILORS_PER_MONTH
+      user.plan === "free" &&
+      (user.tailorsUsedThisMonth || 0) >= FREE_LIMIT
     ) {
       return NextResponse.json(
         {
@@ -52,42 +62,44 @@ export async function POST(req: NextRequest) {
 
     if (!resumeText || !jobDescription) {
       return NextResponse.json(
-        { error: "Resume and job description are required" },
+        { error: "Resume text and job description are required" },
         { status: 400 }
       );
     }
 
+    // Call Claude AI
     const result = await tailorResume(resumeText, jobDescription);
 
-    const { data: saved } = await supabase
-      .from("tailored_resumes")
-      .insert({
-        user_id: user.id,
-        job_description: jobDescription,
-        company_name: result.extracted_job_info.company_name,
-        job_title: result.extracted_job_info.job_title,
-        original_resume_text: resumeText,
-        tailored_resume_json: result.tailored_sections,
-        ats_score: result.ats_score,
-        score_breakdown: result.score_breakdown,
-        missing_keywords: result.missing_keywords,
+    // Save to database
+    const [saved] = await db
+      .insert(tailoredResumes)
+      .values({
+        userId,
+        jobDescription,
+        companyName: result.extracted_job_info.company_name,
+        jobTitle: result.extracted_job_info.job_title,
+        originalResumeText: resumeText,
+        tailoredResumeJson: result.tailored_sections,
+        atsScore: result.ats_score,
+        scoreBreakdown: result.score_breakdown,
+        missingKeywords: result.missing_keywords,
         suggestions: result.suggestions,
       })
-      .select()
-      .single();
+      .returning();
 
-    await supabase
-      .from("profiles")
-      .update({
-        tailors_used_this_month: profile.tailors_used_this_month + 1,
+    // Increment usage counter
+    await db
+      .update(users)
+      .set({
+        tailorsUsedThisMonth: sql`${users.tailorsUsedThisMonth} + 1`,
       })
-      .eq("id", user.id);
+      .where(eq(users.id, userId));
 
     return NextResponse.json({
       success: true,
-      data: { ...result, id: saved?.id },
+      data: { ...result, id: saved.id },
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("Tailor API error:", error);
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },

@@ -12,7 +12,7 @@ export const FAQ_ITEMS = [
   {
     question: "Is my resume data secure?",
     answer:
-      "Yes. We use Supabase for auth and storage with row-level security. Resume text is processed by Anthropic Claude and not used for model training.",
+      "Yes. We use NextAuth.js for authentication, Neon Postgres for data storage, and Cloudflare R2 for file storage. Resume text is processed by Anthropic Claude and not used for model training.",
   },
   {
     question: "What file formats are supported for upload?",

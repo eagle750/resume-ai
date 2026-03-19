@@ -1,10 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import { AuthButton } from "@/components/shared/AuthButton";
 
 export function Navbar() {

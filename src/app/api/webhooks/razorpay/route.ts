@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 function verifyRazorpayWebhook(body: string, signature: string): boolean {
   const expected = crypto
@@ -22,13 +24,16 @@ export async function POST(req: NextRequest) {
   const payment = payload.payload?.payment?.entity;
 
   if (event === "payment.captured" && payment?.notes?.user_id) {
-    const supabase = await createClient();
-    await supabase.from("profiles").update({
-      plan: "pro_india",
-      subscription_status: "active",
-      subscription_id: payment.id,
-      payment_provider: "razorpay",
-    }).eq("id", payment.notes.user_id);
+    await db
+      .update(users)
+      .set({
+        plan: "pro_india",
+        subscriptionStatus: "active",
+        subscriptionId: payment.id,
+        paymentProvider: "razorpay",
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, payment.notes.user_id));
   }
 
   return NextResponse.json({ received: true });

@@ -1,35 +1,20 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { tailoredResumes } from "@/lib/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import type { TailoredResumeRecord } from "@/types";
 
-export default function HistoryPage() {
-  const [items, setItems] = useState<TailoredResumeRecord[]>([]);
+export default async function HistoryPage() {
+  const session = await auth();
+  if (!session?.user?.id) return null;
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    let supabase: ReturnType<typeof createClient>;
-    try {
-      supabase = createClient();
-    } catch {
-      return;
-    }
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from("tailored_resumes")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      setItems((data as TailoredResumeRecord[]) || []);
-    }
-    load();
-  }, []);
+  const items = await db
+    .select()
+    .from(tailoredResumes)
+    .where(eq(tailoredResumes.userId, session.user.id))
+    .orderBy(desc(tailoredResumes.createdAt))
+    .limit(50);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -48,10 +33,10 @@ export default function HistoryPage() {
             <Card key={item.id}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">
-                  {item.job_title || "Untitled"} at {item.company_name || "Unknown"}
+                  {item.jobTitle || "Untitled"} at {item.companyName || "Unknown"}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  {new Date(item.created_at).toLocaleDateString()} · ATS: {item.ats_score ?? "—"}
+                  {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"} · ATS: {item.atsScore ?? "—"}
                 </p>
               </CardHeader>
               <CardContent>

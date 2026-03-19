@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,50 +9,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { User } from "@supabase/supabase-js";
 
 export function AuthButton() {
-  const [user, setUser] = useState<User | null>(null);
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const supabase = createClient();
-      supabaseRef.current = supabase;
-      supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u));
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null);
-      });
-      return () => subscription.unsubscribe();
-    } catch {
-      // When running locally without env vars, Supabase client creation will fail.
-      // That's fine for marketing pages; auth buttons will just stay in logged-out state.
-      setUser(null);
-      supabaseRef.current = null;
-      return;
-    }
-  }, []);
+  if (status === "loading") {
+    return <Button variant="ghost" disabled>Loading…</Button>;
+  }
 
-  const signOut = useCallback(async () => {
-    await supabaseRef.current?.auth.signOut();
-    router.push("/");
-    router.refresh();
-  }, [router]);
-
-  if (user) {
-    const initial = user.email?.[0]?.toUpperCase() ?? "U";
+  if (session?.user) {
+    const initial = session.user.name?.[0]?.toUpperCase() ?? session.user.email?.[0]?.toUpperCase() ?? "U";
     return (
       <DropdownMenu>
         <DropdownMenuTrigger>
           <Button variant="ghost" size="icon" className="rounded-full">
             <Avatar className="h-8 w-8">
+              {session.user.image && <AvatarImage src={session.user.image} alt={session.user.name ?? ""} />}
               <AvatarFallback>{initial}</AvatarFallback>
             </Avatar>
           </Button>
@@ -67,7 +42,11 @@ export function AuthButton() {
           <DropdownMenuItem>
             <Link href="/dashboard/settings">Settings</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={signOut}>Sign out</DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => signOut({ callbackUrl: "/" })}
+          >
+            Sign out
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -76,7 +55,7 @@ export function AuthButton() {
   return (
     <>
       <Link href="/login"><Button variant="ghost">Log in</Button></Link>
-      <Link href="/signup"><Button>Get started</Button></Link>
+      <Link href="/login"><Button>Get started</Button></Link>
     </>
   );
 }

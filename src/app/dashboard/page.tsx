@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useSession } from "next-auth/react";
 import { ResumeUploader } from "@/components/dashboard/ResumeUploader";
 import { JobDescriptionInput } from "@/components/dashboard/JobDescriptionInput";
 import { TailorButton } from "@/components/dashboard/TailorButton";
@@ -18,11 +18,24 @@ import {
 } from "@/components/ui/card";
 import { FREE_TAILORS_PER_MONTH } from "@/lib/constants";
 import type { TailorResult } from "@/lib/claude";
-import type { Profile } from "@/types";
 import { toast } from "sonner";
 
+interface UserProfile {
+  id: string;
+  email: string | null;
+  name: string | null;
+  plan: string;
+  tailorsUsedThisMonth: number | null;
+  tailorsResetDate: string | null;
+  baseResumeText: string | null;
+  baseResumeFilename: string | null;
+  baseResumeUrl: string | null;
+  subscriptionStatus: string | null;
+}
+
 export default function DashboardPage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { data: session } = useSession();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [resumeText, setResumeText] = useState("");
   const [resumeFilename, setResumeFilename] = useState("");
   const [jobDescription, setJobDescription] = useState("");
@@ -30,30 +43,18 @@ export default function DashboardPage() {
   const [result, setResult] = useState<TailorResult | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    let supabase: ReturnType<typeof createClient>;
-    try {
-      supabase = createClient();
-    } catch {
-      return;
-    }
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      if (data) setProfile(data as Profile);
-      const p = data as Profile | null;
-      if (p?.base_resume_text) {
-        setResumeText(p.base_resume_text);
-        setResumeFilename(p.base_resume_filename || "");
-      }
-    }
-    load();
-  }, []);
+    if (!session?.user?.id) return;
+    fetch("/api/user/profile")
+      .then((r) => r.json())
+      .then((data: UserProfile) => {
+        setProfile(data);
+        if (data.baseResumeText) {
+          setResumeText(data.baseResumeText);
+          setResumeFilename(data.baseResumeFilename || "");
+        }
+      })
+      .catch(() => {});
+  }, [session?.user?.id]);
 
   const handleTailor = useCallback(async () => {
     if (!resumeText.trim() || !jobDescription.trim()) {
@@ -74,9 +75,6 @@ export default function DashboardPage() {
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "Something went wrong");
-        if (data.limit_reached) {
-          // Optionally redirect to pricing
-        }
         setLoading(false);
         return;
       }
@@ -92,7 +90,7 @@ export default function DashboardPage() {
     profile?.plan === "free"
       ? FREE_TAILORS_PER_MONTH
       : Infinity;
-  const used = profile?.tailors_used_this_month ?? 0;
+  const used = profile?.tailorsUsedThisMonth ?? 0;
   const addWatermark = profile?.plan === "free";
 
   return (
@@ -113,7 +111,7 @@ export default function DashboardPage() {
         <CardHeader>
           <CardTitle>Your resume</CardTitle>
           <CardDescription>
-            Upload once; we’ll use it for every tailor.
+            Upload once; we'll use it for every tailor.
           </CardDescription>
         </CardHeader>
         <CardContent>

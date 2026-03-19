@@ -1,36 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import type { Profile } from "@/types";
+
+interface UserProfile {
+  id: string;
+  email: string | null;
+  name: string | null;
+  plan: string;
+  subscriptionStatus: string | null;
+}
 
 export default function SettingsPage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { data: session } = useSession();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    let supabase: ReturnType<typeof createClient>;
-    try {
-      supabase = createClient();
-    } catch {
-      return;
-    }
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      if (data) setProfile(data as Profile);
-    }
-    load();
-  }, []);
+    if (!session?.user?.id) return;
+    fetch("/api/user/profile")
+      .then((r) => r.json())
+      .then((data: UserProfile) => setProfile(data))
+      .catch(() => {});
+  }, [session?.user?.id]);
 
   if (!profile) {
     return <p className="text-muted-foreground">Loading…</p>;
