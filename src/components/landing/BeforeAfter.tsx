@@ -11,7 +11,7 @@ const afterExample = `• Reduced API response time by 40% using Redis caching a
 export function BeforeAfter() {
   return (
     <section className="py-16 md:py-24 bg-muted/30">
-      <div className="container">
+      <div className="container mx-auto">
         <h2 className="text-3xl font-bold text-center mb-12">Before vs after tailoring</h2>
         <Tabs defaultValue="after" className="max-w-2xl mx-auto">
           <TabsList className="grid w-full grid-cols-2">

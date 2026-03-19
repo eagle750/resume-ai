@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 export function Hero() {
   return (
     <section className="relative py-20 md:py-28 overflow-hidden">
-      <div className="container relative">
+      <div className="container mx-auto relative">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight max-w-3xl mx-auto text-center">
           Paste a job description → Get an ATS-optimized resume in 30 seconds
         </h1>

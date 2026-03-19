@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 export function CTABanner() {
   return (
     <section className="py-16 md:py-24 bg-primary text-primary-foreground">
-      <div className="container text-center">
+      <div className="container mx-auto text-center">
         <h2 className="text-2xl md:text-3xl font-bold mb-4">
           Ready to get more interviews?
         </h2>

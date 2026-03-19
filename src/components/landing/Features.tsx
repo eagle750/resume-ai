@@ -26,7 +26,7 @@ const features = [
 export function Features() {
   return (
     <section className="py-16 md:py-24">
-      <div className="container">
+      <div className="container mx-auto">
         <h2 className="text-3xl font-bold text-center mb-12">Why ResumeAI</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((f, i) => (

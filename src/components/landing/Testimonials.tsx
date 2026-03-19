@@ -19,7 +19,7 @@ const testimonials = [
 export function Testimonials() {
   return (
     <section className="py-16 md:py-24">
-      <div className="container">
+      <div className="container mx-auto">
         <h2 className="text-3xl font-bold text-center mb-12">What job seekers say</h2>
         <div className="grid md:grid-cols-3 gap-6">
           {testimonials.map((t, i) => (
