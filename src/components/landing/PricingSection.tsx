@@ -1,80 +1,149 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
-const plans = [
-  {
-    name: "Free",
-    price: "₹0",
-    period: "/month",
-    description: "Get started with no cost",
-    features: ["3 tailored resumes per month", "1 template", "ATS score & breakdown", "Watermark on PDF"],
-    cta: "Get started",
-    href: "/signup",
-    highlighted: false,
-  },
-  {
-    name: "Pro India",
-    price: "₹499",
-    period: "/month",
-    description: "Unlimited tailoring for Indian job seekers",
-    features: ["Unlimited tailored resumes", "All templates", "No watermark", "Priority support"],
-    cta: "Subscribe",
-    href: "/dashboard/settings",
-    highlighted: true,
-  },
-  {
-    name: "Pro Global",
-    price: "$9",
-    period: "/month",
-    description: "Same as Pro, billed in USD",
-    features: ["Unlimited tailored resumes", "All templates", "No watermark", "Global billing"],
-    cta: "Subscribe",
-    href: "/dashboard/settings",
-    highlighted: false,
-  },
-];
+async function startRazorpayCheckout(userEmail: string, userName: string, onSuccess: () => void) {
+  const res = await fetch("/api/razorpay/create-order", { method: "POST" });
+  if (!res.ok) {
+    if (res.status === 401) {
+      window.location.href = "/login";
+      return;
+    }
+    alert("Failed to initialize payment. Please try again.");
+    return;
+  }
+  const { orderId, amount, currency } = await res.json();
+
+  const rzp = new (window as any).Razorpay({
+    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+    amount,
+    currency,
+    name: "ResumeAI",
+    description: "Pro India — Unlimited tailoring",
+    order_id: orderId,
+    prefill: { email: userEmail, name: userName },
+    handler: async (response: any) => {
+      const verify = await fetch("/api/razorpay/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+        }),
+      });
+      if (verify.ok) {
+        onSuccess();
+      } else {
+        alert("Payment verification failed. Contact support.");
+      }
+    },
+  });
+  rzp.open();
+}
 
 export function PricingSection() {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleProIndia = async () => {
+    if (!session?.user) {
+      router.push("/login");
+      return;
+    }
+    // Load Razorpay script if not already loaded
+    if (!(window as any).Razorpay) {
+      await new Promise<void>((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Failed to load Razorpay"));
+        document.body.appendChild(script);
+      });
+    }
+    await startRazorpayCheckout(
+      session.user.email ?? "",
+      session.user.name ?? "",
+      () => router.push("/dashboard?upgraded=1")
+    );
+  };
+
   return (
     <section className="py-16 md:py-24 bg-muted/30">
       <div className="container">
         <h2 className="text-3xl font-bold text-center mb-12">Simple pricing</h2>
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {plans.map((plan) => (
-            <Card
-              key={plan.name}
-              className={plan.highlighted ? "border-primary shadow-lg" : ""}
-            >
-              <CardHeader>
-                <h3 className="font-semibold text-lg">{plan.name}</h3>
-                <p className="text-2xl font-bold">
-                  {plan.price}
-                  <span className="text-sm font-normal text-muted-foreground">{plan.period}</span>
-                </p>
-                <p className="text-sm text-muted-foreground">{plan.description}</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href={plan.href} className="block w-full">
-                  <Button
-                    className="w-full"
-                    variant={plan.highlighted ? "default" : "outline"}
-                  >
-                    {plan.cta}
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
+          {/* Free */}
+          <Card>
+            <CardHeader>
+              <h3 className="font-semibold text-lg">Free</h3>
+              <p className="text-2xl font-bold">
+                ₹0<span className="text-sm font-normal text-muted-foreground">/month</span>
+              </p>
+              <p className="text-sm text-muted-foreground">Get started with no cost</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2">
+                {["3 tailored resumes per month", "1 template", "ATS score & breakdown", "Watermark on PDF"].map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary shrink-0" />{f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/login" className="block w-full">
+                <Button className="w-full" variant="outline">Get started</Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Pro India */}
+          <Card className="border-primary shadow-lg">
+            <CardHeader>
+              <h3 className="font-semibold text-lg">Pro India</h3>
+              <p className="text-2xl font-bold">
+                ₹499<span className="text-sm font-normal text-muted-foreground">/month</span>
+              </p>
+              <p className="text-sm text-muted-foreground">Unlimited tailoring for Indian job seekers</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2">
+                {["Unlimited tailored resumes", "All templates", "No watermark", "Priority support"].map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary shrink-0" />{f}
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full" onClick={handleProIndia}>Subscribe</Button>
+            </CardContent>
+          </Card>
+
+          {/* Pro Global */}
+          <Card>
+            <CardHeader>
+              <h3 className="font-semibold text-lg">Pro Global</h3>
+              <p className="text-2xl font-bold">
+                $9<span className="text-sm font-normal text-muted-foreground">/month</span>
+              </p>
+              <p className="text-sm text-muted-foreground">Same as Pro, billed in USD</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2">
+                {["Unlimited tailored resumes", "All templates", "No watermark", "Global billing"].map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary shrink-0" />{f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/dashboard/settings" className="block w-full">
+                <Button className="w-full" variant="outline">Subscribe</Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
