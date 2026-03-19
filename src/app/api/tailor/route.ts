@@ -44,9 +44,15 @@ export async function POST(req: NextRequest) {
       user.tailorsUsedThisMonth = 0;
     }
 
+    // Treat expired pro subscriptions as free
+    const isProActive =
+      user.plan === "pro" &&
+      user.proExpiresAt != null &&
+      user.proExpiresAt > new Date();
+
     // Check limits for free users
     if (
-      user.plan === "free" &&
+      !isProActive &&
       (user.tailorsUsedThisMonth || 0) >= FREE_LIMIT
     ) {
       return NextResponse.json(

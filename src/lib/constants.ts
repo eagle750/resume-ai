@@ -15,7 +15,7 @@ export const PLANS = {
     tailorsPerMonth: Infinity,
     templates: -1, // all
     watermark: false,
-    price: 199,
+    price: 499,
   },
 } as const;
 
