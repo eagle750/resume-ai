@@ -78,7 +78,7 @@ export function PricingSection() {
     <section className="py-16 md:py-24 bg-muted/30">
       <div className="container mx-auto">
         <h2 className="text-3xl font-bold text-center mb-12">Simple pricing</h2>
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
           {/* Free */}
           <Card>
             <CardHeader>
