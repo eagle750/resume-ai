@@ -54,14 +54,35 @@ export async function tailorResume(
   return data.data;
 }
 
-export async function downloadPdf(resumeId: string): Promise<Blob> {
+// The web dashboard generates a PDF by sending the tailored resume payload.
+// The Next.js `/api/generate-pdf` route expects `{ resume, template, addWatermark }`.
+export async function downloadPdf(resume: any): Promise<Blob> {
   const res = await fetch(ROUTES.generatePdf, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: resumeId }),
+    body: JSON.stringify({
+      resume,
+      template: "clean",
+      addWatermark: false,
+    }),
   });
 
-  if (!res.ok) throw new Error("Failed to generate PDF");
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(errText || "Failed to generate PDF");
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/pdf")) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(
+      `Expected PDF, got: ${contentType || "unknown"}: ${errText.slice(
+        0,
+        200
+      )}`
+    );
+  }
+
   return await res.blob();
 }

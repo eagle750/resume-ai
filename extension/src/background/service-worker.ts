@@ -1,5 +1,30 @@
 import { ROUTES } from "../utils/constants";
 
+/** Match job-listing URLs for all locales (e.g. in.indeed.com) and /jobs?...&vjk= */
+function isSupportedJobListingUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase();
+    const path = u.pathname.toLowerCase();
+    const search = u.search;
+
+    if (host.includes("linkedin.com") && path.includes("/jobs")) return true;
+    if (
+      host.includes("naukri.com") &&
+      (path.includes("/job") || path.includes("job-listings"))
+    )
+      return true;
+
+    if (host === "indeed.com" || host.endsWith(".indeed.com")) {
+      if (path.includes("/viewjob")) return true;
+      if (search.includes("vjk=") || search.includes("jk=")) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 // Listen for job detection from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "JOB_DETECTED") {
@@ -9,6 +34,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Update extension badge to show JD was found
     chrome.action.setBadgeText({ text: "JD", tabId: sender.tab?.id });
     chrome.action.setBadgeBackgroundColor({ color: "#f59e0b" });
+  }
+
+  if (message.type === "DEBUG_INDEED_RESULT") {
+    // Content scripts run in isolated worlds; sending a debug payload here
+    // makes it easy to inspect in the service worker console.
+    // eslint-disable-next-line no-console
+    console.log("[ResumeAI][DEBUG_INDEED_RESULT]", message.payload);
   }
 
   if (message.type === "CLEAR_JOB") {
@@ -33,12 +65,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Clear badge when navigating away from job pages
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.url) {
-    const isJobPage =
-      changeInfo.url.includes("linkedin.com/jobs") ||
-      changeInfo.url.includes("indeed.com/viewjob") ||
-      changeInfo.url.includes("indeed.com/?") && changeInfo.url.includes("vjk=") ||
-      changeInfo.url.includes("indeed.com/?") && changeInfo.url.includes("jk=") ||
-      changeInfo.url.includes("naukri.com/job");
+    const isJobPage = isSupportedJobListingUrl(changeInfo.url);
 
     if (!isJobPage) {
       chrome.action.setBadgeText({ text: "", tabId });

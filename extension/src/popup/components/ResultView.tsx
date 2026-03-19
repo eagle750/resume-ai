@@ -18,8 +18,29 @@ export default function ResultView({ result, onReset }: Props) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: result.id }),
+        body: JSON.stringify({
+          resume: result.tailored_sections,
+          template: "clean",
+          addWatermark: false,
+        }),
       });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(errText || "Failed to generate PDF");
+      }
+
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.toLowerCase().includes("application/pdf")) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(
+          `Expected PDF, got: ${contentType || "unknown"}: ${errText.slice(
+            0,
+            200
+          )}`
+        );
+      }
+
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

@@ -21,6 +21,24 @@ export default function App() {
     init();
   }, []);
 
+  // Content scripts often finish after the popup opens; pick up late writes to storage
+  useEffect(() => {
+    const onStorage = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string
+    ) => {
+      if (areaName !== "local" || !changes.detectedJob?.newValue) return;
+      const next = changes.detectedJob.newValue as JobData;
+      setJob(next);
+      // Don't interrupt loading/auth; init() will read storage. Only upgrade from "no job" UI.
+      setState((prev) =>
+        prev === "no_job" || prev === "loading" ? "job_detected" : prev
+      );
+    };
+    chrome.storage.onChanged.addListener(onStorage);
+    return () => chrome.storage.onChanged.removeListener(onStorage);
+  }, []);
+
   async function init() {
     setState("loading");
 
@@ -46,14 +64,31 @@ export default function App() {
     }
 
     // 4. Check for detected job from content script
-    chrome.storage.local.get("detectedJob", (data) => {
-      if (data.detectedJob) {
-        setJob(data.detectedJob);
-        setState("job_detected");
-      } else {
-        setState("no_job");
-      }
-    });
+    // Content scripts can take a while on Indeed/Naukri (SPA + hydration).
+    // If we only wait a short time, the UI can fall back to "no_job" even
+    // though `detectedJob` arrives moments later.
+    const maxWaitMs = 120000; // Indeed/Naukri can take a while (SPA hydration)
+    const pollEveryMs = 1000;
+    const startAt = Date.now();
+
+    const readJobOnce = () => {
+      chrome.storage.local.get("detectedJob", (data) => {
+        if (data.detectedJob) {
+          setJob(data.detectedJob);
+          setState("job_detected");
+          return;
+        }
+
+        if (Date.now() - startAt >= maxWaitMs) {
+          setState("no_job");
+          return;
+        }
+
+        window.setTimeout(readJobOnce, pollEveryMs);
+      });
+    };
+
+    readJobOnce();
   }
 
   async function handleTailor() {

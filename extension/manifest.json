@@ -48,17 +48,17 @@
         "https://in.indeed.com/*"
       ],
       "js": ["src/content/indeed.ts"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
     },
     {
       "matches": [
-        "https://www.naukri.com/job-listings-*",
-        "https://www.naukri.com/job/*",
-        "https://naukri.com/job-listings-*",
-        "https://naukri.com/job/*"
+        "https://www.naukri.com/*",
+        "https://naukri.com/*"
       ],
       "js": ["src/content/naukri.ts"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
   "icons": {

@@ -27,12 +27,44 @@ export function cleanText(text: string): string {
 }
 
 /**
- * Waits for an element to appear in the DOM.
- * Useful because LinkedIn loads content dynamically.
+ * Query selector that pierces open shadow roots (Indeed / mosaic often render JD inside shadow DOM).
+ * Standard document.querySelector does not see into shadow trees.
  */
+export function querySelectorDeep(selector: string): Element | null {
+  function search(root: Document | ShadowRoot): Element | null {
+    try {
+      const direct = root.querySelector(selector);
+      if (direct) return direct;
+    } catch {
+      return null;
+    }
+    const elements = root.querySelectorAll("*");
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+      if (el.shadowRoot) {
+        const found = search(el.shadowRoot);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+  return search(document);
+}
+
+/** Try comma-separated selectors; return first match from deep search. */
+export function querySelectorDeepAny(selectorsCsv: string): Element | null {
+  for (const raw of selectorsCsv.split(",")) {
+    const sel = raw.trim();
+    if (!sel) continue;
+    const el = querySelectorDeep(sel);
+    if (el) return el;
+  }
+  return null;
+}
+
 export function waitForElement(
   selector: string,
-  timeout = 5000
+  timeout = 15000
 ): Promise<Element | null> {
   return new Promise((resolve) => {
     const el = document.querySelector(selector);
@@ -46,11 +78,34 @@ export function waitForElement(
       }
     });
 
-    observer.observe(document.body, { childList: true, subtree: true });
+    const root = document.body ?? document.documentElement;
+    observer.observe(root, { childList: true, subtree: true });
 
     setTimeout(() => {
       observer.disconnect();
       resolve(null);
     }, timeout);
+  });
+}
+
+/** Poll with shadow piercing — MutationObserver misses shadow-DOM updates. */
+export function waitForElementDeep(
+  selectorsCsv: string,
+  timeout = 30000
+): Promise<Element | null> {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const id = window.setInterval(() => {
+      const el = querySelectorDeepAny(selectorsCsv);
+      if (el) {
+        window.clearInterval(id);
+        resolve(el);
+        return;
+      }
+      if (Date.now() - start >= timeout) {
+        window.clearInterval(id);
+        resolve(null);
+      }
+    }, 250);
   });
 }
