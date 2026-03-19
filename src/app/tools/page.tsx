@@ -14,7 +14,7 @@ const tools = [
 
 export default function ToolsPage() {
   return (
-    <div className="container py-12">
+    <div className="container mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-8">Free resume tools</h1>
       <p className="text-muted-foreground mb-8 max-w-2xl">
         Use these tools without signing up. Create an account to get the full tailored resume and PDF.

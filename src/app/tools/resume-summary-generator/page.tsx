@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function SummaryGeneratorPage() {
   return (
-    <div className="container max-w-2xl py-12 px-4">
+    <div className="container max-w-2xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-2">Resume summary generator</h1>
       <p className="text-muted-foreground mb-8">
         For a summary tailored to each job, use our main product: upload your resume and paste the job description to get an AI-written summary plus full tailored resume and ATS score.

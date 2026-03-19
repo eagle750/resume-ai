@@ -32,7 +32,7 @@ export default function ATSScoreCheckerPage() {
   };
 
   return (
-    <div className="container max-w-2xl py-12 px-4">
+    <div className="container max-w-2xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-2">ATS Score Checker</h1>
       <p className="text-muted-foreground mb-8">
         Paste your resume and a job description to get an approximate ATS match score. This is a quick estimate; sign up to get a full AI-tailored resume and accurate score.
