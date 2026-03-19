@@ -23,9 +23,10 @@ export async function POST(req: NextRequest) {
       currency: order.currency,
     });
   } catch (error) {
-    console.error("Razorpay order error:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Razorpay order error:", message);
     return NextResponse.json(
-      { error: "Payment initialization failed" },
+      { error: message },
       { status: 500 }
     );
   }
