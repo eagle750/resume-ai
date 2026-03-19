@@ -14,7 +14,8 @@ async function startRazorpayCheckout(userEmail: string, userName: string, onSucc
       window.location.href = "/login";
       return;
     }
-    alert("Failed to initialize payment. Please try again.");
+    const body = await res.json().catch(() => ({}));
+    alert(`Payment error: ${body.error ?? "Unknown error (check Vercel logs)"}`);
     return;
   }
   const { orderId, amount, currency } = await res.json();

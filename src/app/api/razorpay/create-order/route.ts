@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const order = await razorpay.orders.create({
       amount: 49900, // ₹499 in paise
       currency: "INR",
-      receipt: `receipt_${session.user.id}_${Date.now()}`,
+      receipt: `r_${session.user.id.slice(0, 8)}_${Date.now().toString().slice(-8)}`,
       notes: { user_id: session.user.id, plan: "pro_india" },
     });
 
@@ -23,9 +23,10 @@ export async function POST(req: NextRequest) {
       currency: order.currency,
     });
   } catch (error) {
-    console.error("Razorpay order error:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Razorpay order error:", message);
     return NextResponse.json(
-      { error: "Payment initialization failed" },
+      { error: message },
       { status: 500 }
     );
   }
