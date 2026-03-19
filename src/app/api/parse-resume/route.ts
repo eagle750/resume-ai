@@ -5,7 +5,7 @@ import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { uploadFile } from "@/lib/r2";
 import mammoth from "mammoth";
-import PDFParser from "pdf2json";
+import { extractText } from "unpdf";
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,16 +26,10 @@ export async function POST(req: NextRequest) {
 
     // Extract text
     if (file.name.endsWith(".pdf")) {
-      text = await new Promise<string>((resolve, reject) => {
-        const parser = new PDFParser();
-        parser.on("pdfParser_dataReady", () => {
-          resolve(parser.getRawTextContent());
-        });
-        parser.on("pdfParser_dataError", (err) => {
-          reject(err instanceof Error ? err : err.parserError);
-        });
-        parser.parseBuffer(buffer);
+      const { text: pages } = await extractText(new Uint8Array(buffer), {
+        mergePages: true,
       });
+      text = pages ?? "";
     } else if (file.name.endsWith(".docx") || file.name.endsWith(".doc")) {
       const result = await mammoth.extractRawText({ buffer });
       text = result.value;
