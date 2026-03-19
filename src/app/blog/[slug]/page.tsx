@@ -29,7 +29,7 @@ export default async function BlogPostPage({ params }: Props) {
   if (!post) notFound();
 
   return (
-    <article className="container max-w-3xl py-12">
+    <article className="container max-w-3xl mx-auto px-4 py-12">
       <BlogPostJsonLd
         title={post.title}
         description={post.description}

@@ -30,7 +30,7 @@ export default async function RoleExamplePage({ params }: Props) {
   if (!r) notFound();
 
   return (
-    <div className="container max-w-3xl py-12">
+    <div className="container max-w-3xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-4">
         {r.title} Resume Example & Guide [2026]
       </h1>
