@@ -1,14 +1,19 @@
 import type { JobData } from "@/types";
 
 /**
- * Sends extracted job data to the extension popup via chrome messaging.
- * Called by each site-specific content script.
+ * Saves extracted job data directly to chrome.storage.local and
+ * optionally notifies the background service worker for badge updates.
+ *
+ * We write to storage directly because MV3 service workers go to sleep
+ * and may not be alive to receive the message — storage is always available.
  */
 export function sendJobData(data: JobData) {
-  chrome.runtime.sendMessage({
-    type: "JOB_DETECTED",
-    payload: data,
-  });
+  // Always write to storage first — popup reads from here
+  chrome.storage.local.set({ detectedJob: data });
+
+  // Best-effort message to background for badge update
+  // (service worker may be sleeping; that's fine — badge is cosmetic)
+  chrome.runtime.sendMessage({ type: "JOB_DETECTED", payload: data }).catch(() => {});
 }
 
 /**

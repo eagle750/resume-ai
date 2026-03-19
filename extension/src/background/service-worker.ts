@@ -36,11 +36,21 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
     const isJobPage =
       changeInfo.url.includes("linkedin.com/jobs") ||
       changeInfo.url.includes("indeed.com/viewjob") ||
+      changeInfo.url.includes("indeed.com/?") && changeInfo.url.includes("vjk=") ||
+      changeInfo.url.includes("indeed.com/?") && changeInfo.url.includes("jk=") ||
       changeInfo.url.includes("naukri.com/job");
 
     if (!isJobPage) {
       chrome.action.setBadgeText({ text: "", tabId });
       chrome.storage.local.remove("detectedJob");
+    } else {
+      // Restore badge if we already have a stored job (SW woke up mid-session)
+      chrome.storage.local.get("detectedJob", (data) => {
+        if (data.detectedJob) {
+          chrome.action.setBadgeText({ text: "JD", tabId });
+          chrome.action.setBadgeBackgroundColor({ color: "#f59e0b" });
+        }
+      });
     }
   }
 });
