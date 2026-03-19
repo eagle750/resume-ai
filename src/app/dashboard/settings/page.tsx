@@ -65,7 +65,7 @@ export default function SettingsPage() {
                 <Button>View plans</Button>
               </Link>
               <p className="text-sm text-muted-foreground w-full">
-                Pro: ₹199/month
+                Pro: ₹499/month
               </p>
             </div>
           ) : (
