@@ -24,7 +24,7 @@ async function startRazorpayCheckout(userEmail: string, userName: string, onSucc
     key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
     subscription_id: subscriptionId,
     name: "ResumeAI",
-    description: "Pro — ₹399/month, cancel anytime",
+    description: "Pro — ₹499/month, cancel anytime",
     prefill: { email: userEmail, name: userName },
     handler: async (response: any) => {
       const verify = await fetch("/api/razorpay/verify", {
@@ -105,7 +105,7 @@ export function PricingSection() {
             <CardHeader>
               <h3 className="font-semibold text-lg">Pro</h3>
               <p className="text-2xl font-bold">
-                ₹399<span className="text-sm font-normal text-muted-foreground">/month</span>
+                ₹499<span className="text-sm font-normal text-muted-foreground">/month</span>
               </p>
               <p className="text-sm text-muted-foreground">Unlimited tailoring, no watermark</p>
             </CardHeader>
