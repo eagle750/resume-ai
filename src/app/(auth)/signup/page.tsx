@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,53 +10,49 @@ import Link from "next/link";
 
 export default function SignupPage() {
   const router = useRouter();
-  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        supabaseRef.current = createClient();
-      } catch {
-        supabaseRef.current = null;
-      }
-    }
-  }, []);
-
   const handleGoogleSignup = async () => {
-    const supabase = supabaseRef.current;
-    if (!supabase) return;
+    setMessage("");
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (error) {
-      setMessage(error.message);
-      setLoading(false);
-      return;
+    try {
+      const supabase = createClient();
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo },
+      });
+      if (error) setMessage(error.message);
+    } catch {
+      setMessage(
+        "Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+      );
     }
     setLoading(false);
   };
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = supabaseRef.current;
-    if (!supabase || !email) return;
+    if (!email) return;
     setLoading(true);
     setMessage("");
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    });
-    setLoading(false);
-    if (error) {
-      setMessage(error.message);
-      return;
+    try {
+      const supabase = createClient();
+      const emailRedirectTo = `${window.location.origin}/auth/callback`;
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo },
+      });
+      if (error) setMessage(error.message);
+      else setMessage("Check your email for the magic link.");
+    } catch {
+      setMessage(
+        "Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+      );
     }
-    setMessage("Check your email for the magic link.");
+    setLoading(false);
   };
 
   return (
