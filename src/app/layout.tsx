@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/shared/Navbar";
 import { Footer } from "@/components/shared/Footer";
@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import { SessionProvider } from "next-auth/react";
 
-const geistSans = Geist({
+const geistSans = Plus_Jakarta_Sans({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
