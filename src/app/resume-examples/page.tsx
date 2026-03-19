@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ResumeExamplesPage() {
   return (
-    <div className="container py-12">
+    <div className="container mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-8">Resume examples</h1>
       <p className="text-muted-foreground mb-8 max-w-2xl">
         Role-specific examples and tips. Use ResumeAI to tailor your resume to any job.
