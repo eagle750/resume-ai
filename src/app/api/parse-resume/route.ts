@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { uploadFile } from "@/lib/r2";
-import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 
 export async function POST(req: NextRequest) {
@@ -26,10 +25,14 @@ export async function POST(req: NextRequest) {
 
     // Extract text
     if (file.name.endsWith(".pdf")) {
-      const parser = new PDFParse({ data: buffer });
-      const result = await parser.getText();
+      // DOMMatrix polyfill required by pdfjs-dist in Node.js environment
+      if (typeof globalThis.DOMMatrix === "undefined") {
+        // @ts-expect-error polyfill for server environment
+        globalThis.DOMMatrix = class DOMMatrix {};
+      }
+      const pdfParse = (await import("pdf-parse")).default;
+      const result = await pdfParse(buffer);
       text = result.text ?? "";
-      await parser.destroy();
     } else if (file.name.endsWith(".docx") || file.name.endsWith(".doc")) {
       const result = await mammoth.extractRawText({ buffer });
       text = result.value;
