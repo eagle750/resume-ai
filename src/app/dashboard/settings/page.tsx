@@ -13,7 +13,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let supabase: ReturnType<typeof createClient> | null = null;
+    let supabase: ReturnType<typeof createClient>;
     try {
       supabase = createClient();
     } catch {
