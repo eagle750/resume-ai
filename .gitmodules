@@ -1,0 +1,3 @@
+[submodule "instagram-agent"]
+	path = instagram-agent
+	url = https://github.com/eagle750/ai-insta-autopilt
