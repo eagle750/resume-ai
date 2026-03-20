@@ -7,7 +7,7 @@ import { writeCarousel } from "./create/carousel-writer";
 import { writeReelScript } from "./create/reel-writer";
 import { renderAllSlides } from "./generate/image-renderer";
 import { uploadFile } from "./publish/uploader";
-import { postFirstComment, publishCarousel } from "./publish/instagram";
+import { getPublishProvider } from "./publish/instagram";
 import { resolveSlotFromNow } from "./publish/scheduler";
 import {
   getRecentTopics,
@@ -26,6 +26,13 @@ function buildR2Key(slotIndex: number, slideIndex: number): string {
 
 async function run(): Promise<void> {
   const { slotIndex, type } = resolveSlotFromNow();
+  const publisher = getPublishProvider();
+  // eslint-disable-next-line no-console
+  console.log(`Using publish provider: ${publisher.name}`);
+  // eslint-disable-next-line no-console
+  console.log("To switch providers, change PUBLISH_PROVIDER env var");
+  // eslint-disable-next-line no-console
+  console.log(`Current: PUBLISH_PROVIDER=${process.env.PUBLISH_PROVIDER || "late"}`);
 
   logger.info("Starting Instagram autopilot run", {
     slotIndex,
@@ -71,13 +78,16 @@ async function run(): Promise<void> {
     }
 
     logger.info("Publishing carousel to Instagram...");
-    const result = await publishCarousel(imageUrls, carousel.caption);
+    const result = await publisher.publishCarousel(imageUrls, carousel.caption);
 
     logger.info("Posting hashtags as first comment...");
-    await postFirstComment(result.id, carousel.firstComment);
+    await publisher.postFirstComment(result.id, carousel.firstComment);
 
     await savePostedTopic(planned.topic, planned.category, result.id);
-    logger.info("Carousel published", { instagramId: result.id });
+    logger.info("Carousel published", {
+      instagramId: result.id,
+      provider: result.provider,
+    });
     return;
   }
 
